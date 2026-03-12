@@ -1,0 +1,159 @@
+# ============================================
+# CRITICAL - NEVER COMMIT THESE FILES
+# ============================================
+
+# Environment Variables (Contains API keys, passwords, tokens)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Credentials & Keys
+*.pem
+*.key
+*.p12
+*.pfx
+broker_credentials.json
+zerodha_token.json
+access_token.txt
+kite_session.dat
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================
+# Node.js / Frontend
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+.vercel
+dist/
+build/
+
+# ============================================
+# IDEs & Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sql.backup
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+log.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Data & Artifacts
+# ============================================
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Backtest Results
+backtest_results/
+*.pkl
+*.pickle
+
+# Market Data Cache
+market_data_cache/
+options_cache/
+
+# ============================================
+# Temporary & Test Files
+# ============================================
+temp/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+.cache/
+
+# Test files
+test_*.py
+*_test.py
+check_*.py
+verify_*.py
+debug_*.py
+
+# ============================================
+# Security - Documentation with Credentials
+# ============================================
+# These files may contain example credentials
+SECURITY_AUDIT.md
+GITHUB_PREP.md
+SESSION_SUMMARY.md
+*_CREDENTIALS*.md
+
+# ============================================
+# Allowed Files (Whitelist Examples)
+# ============================================
+# !important_file.py
+# !config/settings.example.py

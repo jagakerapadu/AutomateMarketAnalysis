@@ -1,0 +1,1 @@
+"""Indicators service package"""

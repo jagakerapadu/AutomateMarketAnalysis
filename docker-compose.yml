@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: trading_timescaledb
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./scripts/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    command: postgres -c shared_preload_libraries=timescaledb
+
+  backend:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: trading_api
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+    ports:
+      - "${API_PORT}:8000"
+    volumes:
+      - ./services:/app/services
+      - ./data:/app/data
+    depends_on:
+      - timescaledb
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: trading_dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  timescale_data:
