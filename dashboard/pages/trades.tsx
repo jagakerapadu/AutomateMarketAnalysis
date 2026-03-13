@@ -10,6 +10,8 @@ export default function TradesPage() {
 
   useEffect(() => {
     loadData()
+    const interval = setInterval(loadData, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
   }, [filter])
 
   const loadData = async () => {

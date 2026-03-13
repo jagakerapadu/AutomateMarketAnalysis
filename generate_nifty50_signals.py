@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import psycopg2
 from datetime import datetime, timedelta
 from config.settings import get_settings
+from services.market_data.adapters.zerodha_adapter import ZerodhaAdapter
 
 settings = get_settings()
 
@@ -21,7 +22,7 @@ NIFTY_50_STOCKS = [
 ]
 
 def generate_sample_signals():
-    """Generate sample BUY signals for Nifty 50 stocks"""
+    """Generate BUY signals for Nifty 50 stocks using live market data"""
     conn = psycopg2.connect(
         host=settings.DB_HOST,
         port=settings.DB_PORT,
@@ -36,28 +37,44 @@ def generate_sample_signals():
     print("GENERATING TRADING SIGNALS FOR NIFTY 50 STOCKS")
     print(f"{'='*80}\n")
     
-    # Get current prices from OHLC data (most recent)
+    # Initialize Zerodha adapter for live prices
+    print("Connecting to Zerodha for live prices...")
+    zerodha = ZerodhaAdapter()
+    
+    if not zerodha.kite:
+        print("ERROR: Zerodha connection failed. Please check your access token.")
+        print("Run: py generate_token_quick.py")
+        return
+    
     signals_created = 0
     
+    # Fetch live quotes for all symbols at once
+    try:
+        instruments = [f"NSE:{symbol}" for symbol in NIFTY_50_STOCKS]
+        quotes = zerodha.kite.quote(instruments)
+        print(f"✅ Fetched live prices for {len(quotes)} stocks\n")
+    except Exception as e:
+        print(f"ERROR fetching quotes: {e}")
+        return
+    
     for symbol in NIFTY_50_STOCKS:
-        # Get latest price
-        cursor.execute("""
-            SELECT close, high, low, volume 
-            FROM ohlc 
-            WHERE symbol = %s 
-            ORDER BY time DESC 
-            LIMIT 1
-        """, (symbol,))
+        instrument_key = f"NSE:{symbol}"
         
-        result = cursor.fetchone()
-        if not result:
+        if instrument_key not in quotes:
             print(f"⚠️  No data for {symbol}, skipping...")
             continue
-            
-        close_price, high, low, volume = result
+        
+        quote_data = quotes[instrument_key]
+        close_price = quote_data.get('last_price', 0)
+        quote_data = quotes[instrument_key]
+        close_price = quote_data.get('last_price', 0)
+        
+        if close_price == 0:
+            print(f"⚠️  Invalid price for {symbol}, skipping...")
+            continue
         
         # Generate a simple BUY signal based on momentum
-        # Entry: Current close price
+        # Entry: Current LTP
         # Stop loss: 2% below
         # Target: 3% above
         entry_price = float(close_price)
@@ -65,7 +82,15 @@ def generate_sample_signals():
         target_price = entry_price * 1.03  # 3% target
         
         # Calculate confidence based on price action (simplified)
-        confidence = 75  # Default confidence
+        # Higher confidence if price is near day high
+        day_high = quote_data.get('ohlc', {}).get('high', entry_price)
+        day_low = quote_data.get('ohlc', {}).get('low', entry_price)
+        
+        if day_high > day_low:
+            price_position = (entry_price - day_low) / (day_high - day_low)
+            confidence = int(70 + (price_position * 10))  # 70-80% based on position in day's range
+        else:
+            confidence = 75
         
         # Insert signal
         cursor.execute("""
@@ -84,13 +109,13 @@ def generate_sample_signals():
             target_price,
             confidence,
             0,  # Quantity will be calculated by paper trading engine
-            f'Strong momentum detected, entry at Rs.{entry_price:.2f}',
+            f'Strong momentum detected at Rs.{entry_price:.2f} (Day High: Rs.{day_high:.2f})',
             'PENDING',
             datetime.now()
         ))
         
         signals_created += 1
-        print(f"✅ {symbol:12} BUY signal | Entry: Rs.{entry_price:8,.2f} | Target: Rs.{target_price:8,.2f} | {confidence}%")
+        print(f"✅ {symbol:12} BUY | Entry: Rs.{entry_price:8,.2f} | Target: Rs.{target_price:8,.2f} | SL: Rs.{stop_loss:8,.2f} | {confidence}%")
     
     conn.commit()
     cursor.close()

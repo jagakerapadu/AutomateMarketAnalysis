@@ -14,10 +14,18 @@ A complete enterprise-grade trading system for Indian markets (NSE/BSE) with aut
   - RSI Oversold/Overbought
   - Volume Breakout
   - Extensible strategy framework
+- **Paper Trading Engine**: Virtual portfolio with real-time execution simulation
+- **Risk Management System**: 
+  - Automatic stop-loss execution (-2% equity, -40% options)
+  - Position size limits (10% max per position)
+  - Total exposure limits (80% max deployed)
+  - Confidence-based position sizing
+  - Real-time risk monitoring and alerts
 - **Backtest Engine**: Historical simulation with detailed metrics
 - **FastAPI Backend**: RESTful API for all services
 - **Next.js Dashboard**: Real-time market intelligence interface
 - **Automated Scheduler**: Pre-market, intraday, and post-market jobs
+- **Comprehensive Testing**: 49 automated tests (unit, integration, regression)
 
 ## 📋 Prerequisites
 
@@ -165,6 +173,46 @@ python scheduler.py
 | `services/strategy/strategy_engine.py` | Generate trading signals | `python services/strategy/strategy_engine.py` |
 | `services/backtest/backtest_engine.py` | Run backtests on strategies | `python services/backtest/backtest_engine.py` |
 
+### 🛡️ Risk Management & Monitoring
+
+| Script | Purpose | Command |
+|--------|---------|---------|
+| `services/paper_trading/risk_manager.py` | View risk status and limits | `python services/paper_trading/risk_manager.py` |
+| `monitor_positions.py` | **Real-time position monitoring** | `python monitor_positions.py` |
+| `update_paper_prices.py` | Update paper trading prices | `python update_paper_prices.py` |
+| `analyze_march13_trading.py` | Daily trading analysis report | `python analyze_march13_trading.py` |
+
+**Risk Limits (Active Protection):**
+- Max per position: **10% of capital**
+- Max total exposure: **80% of capital**
+- Max positions: **20 concurrent**
+- Equity stop-loss: **-2%** (automatic exit)
+- Equity target: **+3%** (automatic exit)
+- Options stop-loss: **-40%** (wider tolerance)
+- Options target: **+50%**
+
+### 🧪 Testing & Quality Assurance
+
+| Test Suite | Tests | Command |
+|------------|-------|---------|
+| **All Tests** | 49 tests | `python run_all_tests.py` |
+| Risk Manager Unit Tests | 19 tests | `$env:PYTHONPATH = "$PWD"; py tests\unit\test_risk_manager.py` |
+| Portfolio Unit Tests | 14 tests | `$env:PYTHONPATH = "$PWD"; py tests\unit\test_virtual_portfolio.py` |
+| Regression Tests | 16 tests | `$env:PYTHONPATH = "$PWD"; py tests\regression\test_march13_data.py` |
+
+**Test Coverage:**
+- ✅ Position sizing validation
+- ✅ Stop-loss/target logic
+- ✅ P&L calculations (realized & unrealized)
+- ✅ Cash flow tracking
+- ✅ Options calculations (lot sizes)
+- ✅ Regression validation against March 13, 2026 data
+- ✅ Risk limit enforcement
+
+**Test Status:** 49/49 Passing (100%)
+
+---
+
 ## 📊 First Run Workflow
 
 ### 1. Setup Credentials
@@ -206,11 +254,20 @@ Pages available:
 
 ## 📈 Daily Usage
 
-### Morning Routine (Before Market Opens - 9:00 AM IST)
+### Morning Routine (Before Market Opens - 8:00 AM IST)
 ```bash
 # Regenerate Zerodha token (expires daily)
 python setup_credentials.py
 # Select option 4: Regenerate Zerodha Access Token
+
+# Update paper trading prices
+python update_paper_prices.py
+
+# Check risk status
+python services/paper_trading/risk_manager.py
+
+# Run regression tests to verify system integrity
+$env:PYTHONPATH = "$PWD"; python tests/regression/test_march13_data.py
 
 # Fetch pre-market data
 python fetch_all_data.py
@@ -219,16 +276,45 @@ python fetch_all_data.py
 python start.py
 ```
 
-### During Market Hours
+### During Market Hours (9:15 AM - 3:30 PM IST)
+
+**Recommended: Start Real-Time Monitoring**
+```bash
+python monitor_positions.py
+```
+This will:
+- Update prices every 30 seconds
+- Alert on positions approaching stop-loss
+- Show real-time risk dashboard
+- Auto-execute stop-loss at -2%
+
+**Or Manual Monitoring:**
+```bash
+# Check current positions and risk
+python services/paper_trading/risk_manager.py
+
+# Update prices manually
+python update_paper_prices.py
+```
+
 The system will continuously:
 - Fetch real-time data (if scheduler is running)
 - Generate signals based on strategies
+- Execute paper trades with risk validation
 - Display updates on dashboard
 
 ### Post-Market (After 3:30 PM IST)
 ```bash
 # Fetch end-of-day data
 python populate_real_data.py
+
+# Generate daily trading report
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$env:PYTHONIOENCODING = 'utf-8'
+python analyze_march13_trading.py
+
+# Run full test suite to verify data integrity
+python run_all_tests.py
 
 # Review performance
 python system_status.py
@@ -244,12 +330,29 @@ AutomateMarketAnalysis/
 │   ├── indicators/        # Technical indicator engine
 │   ├── strategy/          # Trading strategies
 │   ├── backtest/          # Backtesting engine
+│   ├── paper_trading/     # Paper trading engine
+│   │   ├── paper_trading_engine.py
+│   │   ├── virtual_portfolio.py
+│   │   └── risk_manager.py      # NEW: Risk management framework
 │   └── api/               # FastAPI backend
+├── tests/                 # NEW: Comprehensive test suite
+│   ├── unit/             # Unit tests (33 tests)
+│   │   ├── test_risk_manager.py          (19 tests)
+│   │   └── test_virtual_portfolio.py     (14 tests)
+│   ├── integration/      # Integration tests
+│   │   └── test_trading_workflows.py
+│   └── regression/       # Regression tests (16 tests)
+│       └── test_march13_data.py
 ├── dashboard/             # Next.js dashboard
 ├── scheduler/            # Task scheduler
 ├── scripts/sql/          # Database schema
+├── monitor_positions.py   # NEW: Real-time position monitoring
+├── run_all_tests.py      # NEW: Master test runner
+├── analyze_march13_trading.py  # Daily trading analysis
 ├── docker-compose.yml
-└── requirements.txt
+├── requirements.txt
+├── SYSTEM_IMPROVEMENTS.md  # NEW: Detailed improvement docs
+└── QUICK_START.md         # NEW: Quick reference guide
 ```
 
 ## 📊 Database Schema
@@ -293,6 +396,32 @@ AutomateMarketAnalysis/
 2. Inherit from `BaseStrategy`
 3. Implement `generate_signal()` and `validate_conditions()`
 4. Register in `StrategyEngine`
+
+---
+
+## 🆕 Recent Improvements (March 2026)
+
+### Risk Management System
+- **Automatic stop-loss**: Exits at -2% for equity, -40% for options
+- **Position limits**: Max 10% per position, 80% total exposure
+- **Risk monitoring**: Real-time alerts for positions at risk
+- **Optimal sizing**: Confidence-based position sizing
+
+### Testing Framework
+- **49 automated tests** covering all critical functions
+- **Unit tests**: Risk manager (19) + Portfolio (14)
+- **Regression tests**: Validates against March 13, 2026 data (16)
+- **100% pass rate**: All calculations verified accurate
+
+### Monitoring Tools
+- **monitor_positions.py**: Continuous 30-second price updates
+- **Risk dashboard**: Live exposure, P&L, and alerts
+- **Alert system**: Notifications for positions near stop-loss
+
+**📚 Documentation:**
+- `SYSTEM_IMPROVEMENTS.md` - Detailed technical improvements
+- `QUICK_START.md` - Quick reference for daily operations
+- `MARCH13_2026_TRADING_REPORT.md` - Sample trading day analysis
 
 ---
 

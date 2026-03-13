@@ -97,6 +97,11 @@ class OptionsIndicators:
         if df.empty:
             return {'pcr_all': 0, 'pcr_oi': 0, 'pcr_volume': 0}
         
+        # Convert to float to avoid Decimal type issues
+        df['oi'] = df['oi'].astype(float)
+        df['volume'] = df['volume'].astype(float)
+        df['oi_change'] = df['oi_change'].astype(float)
+        
         ce_df = df[df['option_type'] == 'CE']
         pe_df = df[df['option_type'] == 'PE']
         
@@ -134,6 +139,10 @@ class OptionsIndicators:
         
         if df.empty:
             return 0
+        
+        # Convert decimal columns to float to avoid type errors
+        df['strike'] = df['strike'].astype(float)
+        df['oi'] = df['oi'].astype(float)
         
         strikes = sorted(df['strike'].unique())
         max_pain_values = {}
@@ -198,6 +207,11 @@ class OptionsIndicators:
         
         if df.empty:
             return {'iv_rank': 0, 'atm_call_iv': 0, 'atm_put_iv': 0}
+        
+        # Convert to float to avoid Decimal type issues
+        df['strike'] = df['strike'].astype(float)
+        df['ltp'] = df['ltp'].astype(float)
+        df['iv'] = df['iv'].astype(float)
         
         # Get ATM strike (closest to spot price)
         spot_price = self.get_spot_price(symbol)

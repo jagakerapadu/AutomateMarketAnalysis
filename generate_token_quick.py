@@ -21,7 +21,7 @@ print("=" * 60)
 print("🔑 Zerodha Token Generator")
 print("=" * 60)
 print()
-print(f"API Key: {API_KEY}")
+print(f"API Key: {API_KEY[:10]}..." if API_KEY else "API Key: [NOT SET]")
 print(f"Time: {datetime.now().strftime('%I:%M %p')}")
 print()
 
@@ -70,7 +70,8 @@ try:
     print("✅ SUCCESS!")
     print("=" * 60)
     print()
-    print(f"Access Token: {access_token}")
+    print(f"Access Token: {access_token[:20]}..." if len(access_token) > 20 else access_token)
+    print(f"User ID: {data.get('user_id', 'N/A')}")
     print()
     
     # Save to .env
@@ -92,6 +93,15 @@ try:
     
     print("✅ Saved to .env file")
     print()
+    
+    # IMPORTANT: Also update environment variable in current PowerShell session
+    # This ensures immediate use without restarting terminal
+    import os
+    os.environ['ZERODHA_ACCESS_TOKEN'] = access_token
+    os.environ['ZERODHA_REQUEST_TOKEN'] = request_token
+    print("✅ Updated environment variables in current session")
+    print()
+    
     print(f"Valid until: 11:59 PM IST ({datetime.now().strftime('%B %d, %Y')})")
     print()
     print("=" * 60)

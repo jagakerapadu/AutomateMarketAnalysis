@@ -8,7 +8,6 @@ from config.settings import get_settings
 from config.logger import setup_logger
 
 logger = setup_logger("zerodha_adapter")
-settings = get_settings()
 
 # Indian timezone
 IST = pytz.timezone('Asia/Kolkata')
@@ -17,6 +16,10 @@ class ZerodhaAdapter:
     """Adapter for Zerodha Kite API"""
     
     def __init__(self):
+        # IMPORTANT: Load settings HERE (not at module level) to get fresh token from .env
+        # This ensures newly generated tokens are picked up immediately
+        settings = get_settings()
+        
         self.api_key = settings.ZERODHA_API_KEY
         self.api_secret = settings.ZERODHA_API_SECRET
         self.access_token = settings.ZERODHA_ACCESS_TOKEN

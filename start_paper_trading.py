@@ -2,8 +2,14 @@
 Start Paper Trading Engine - Run virtual trading with live market data
 """
 import sys
+import os
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Clear cached Zerodha environment variables to force token refresh
+for key in list(os.environ.keys()):
+    if key.startswith('ZERODHA_'):
+        del os.environ[key]
 
 from services.paper_trading.paper_trading_engine import PaperTradingEngine
 from config.logger import setup_logger

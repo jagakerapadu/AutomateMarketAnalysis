@@ -10,12 +10,12 @@ from datetime import datetime, time as dt_time
 from typing import List, Dict, Optional
 import psycopg2
 from services.paper_trading.virtual_portfolio import VirtualPortfolio
+from services.paper_trading.risk_manager import RiskManager
 from services.market_data.adapters.zerodha_adapter import ZerodhaAdapter
 from config.settings import get_settings
 from config.logger import setup_logger
 
 logger = setup_logger("paper_trading_engine")
-settings = get_settings()
 
 
 class PaperTradingEngine:
@@ -29,12 +29,13 @@ class PaperTradingEngine:
             auto_execute: Automatically execute signals
         """
         self.portfolio = VirtualPortfolio()
+        self.risk_manager = RiskManager()
         self.zerodha = ZerodhaAdapter()
         self.auto_execute = auto_execute
         self.watchlist = ['INFY', 'RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK']
         self.running = False
         
-        logger.info("Paper Trading Engine initialized")
+        logger.info("Paper Trading Engine initialized with Risk Manager")
     
     def get_live_prices(self, symbols: List[str] = None) -> Dict[str, float]:
         """
@@ -68,6 +69,7 @@ class PaperTradingEngine:
     def get_pending_signals(self) -> List[Dict]:
         """Get unexecuted trading signals"""
         try:
+            settings = get_settings()  # Load fresh settings
             conn = psycopg2.connect(
                 host=settings.DB_HOST,
                 port=settings.DB_PORT,
@@ -114,7 +116,7 @@ class PaperTradingEngine:
     
     def execute_signal(self, signal: Dict, current_price: float) -> bool:
         """
-        Execute a trading signal
+        Execute a trading signal with risk management
         
         Args:
             signal: Signal dictionary
@@ -125,17 +127,47 @@ class PaperTradingEngine:
             signal_type = signal['signal_type']
             confidence = signal['confidence']
             
-            # Calculate position size based on confidence
-            # Higher confidence = larger position
+            # Get portfolio summary
             portfolio_summary = self.portfolio.get_portfolio_summary()
-            available_cash = portfolio_summary['available_cash']
+            total_capital = portfolio_summary['total_capital']
             
-            # Risk management: Don't use more than 20% per trade
-            max_trade_value = available_cash * 0.20
+            # Use risk manager to calculate optimal position size
+            quantity = self.risk_manager.calculate_optimal_position_size(
+                symbol=symbol,
+                price=current_price,
+                confidence=confidence
+            )
             
-            # Calculate quantity (rounded to nearest lot)
-            quantity = int(max_trade_value / current_price)
-            quantity = max(quantity, 1)  # At least 1 share
+            if quantity == 0:
+                logger.warning(f"Risk manager rejected trade: {symbol}")
+                return False
+            
+            # Validate position size
+            is_valid, reason, suggested_qty = self.risk_manager.validate_position_size(
+                symbol=symbol,
+                quantity=quantity,
+                price=current_price,
+                total_capital=total_capital
+            )
+            
+            if not is_valid:
+                logger.warning(f"{symbol}: {reason}")
+                quantity = suggested_qty  # Use adjusted quantity
+            
+            # Check total exposure
+            position_value = quantity * current_price
+            can_trade, exposure_reason = self.risk_manager.check_total_exposure(position_value)
+            
+            if not can_trade:
+                logger.warning(f"{symbol}: {exposure_reason}")
+                return False
+            
+            # Check position limits
+            can_add, limit_reason = self.risk_manager.check_position_limits()
+            
+            if not can_add:
+                logger.warning(f"{symbol}: {limit_reason}")
+                return False
             
             # Generate order ID
             order_id = f"PAPER_{symbol}_{int(time.time())}"
@@ -151,9 +183,10 @@ class PaperTradingEngine:
             )
             
             if success:
-                logger.info(f"✅ Executed: {signal_type} {quantity} {symbol} @ ₹{current_price:.2f} (Confidence: {confidence}%)")
+                logger.info(f"✅ Executed: {signal_type} {quantity} {symbol} @ Rs.{current_price:.2f} "
+                          f"(Rs.{quantity*current_price:,.2f}, {confidence}% confidence)")
             else:
-                logger.warning(f"❌ Failed to execute: {signal_type} {symbol}")
+                logger.warning(f"Failed to execute: {signal_type} {symbol}")
             
             return success
             
@@ -162,7 +195,7 @@ class PaperTradingEngine:
             return False
     
     def check_exit_conditions(self):
-        """Check if any positions should be exited"""
+        """Check if any positions should be exited based on risk rules"""
         positions = self.portfolio.get_positions()
         live_prices = self.get_live_prices([p['symbol'] for p in positions])
         
@@ -171,22 +204,18 @@ class PaperTradingEngine:
             current_price = live_prices.get(symbol)
             
             if not current_price:
+                logger.debug(f"{symbol}: No current price available")
                 continue
             
             avg_price = position['avg_price']
-            pnl_percent = position['pnl_percent']
             
-            # Simple exit logic
-            # Exit if profit > 3% or loss > 2%
-            should_exit = False
-            reason = ""
-            
-            if pnl_percent >= 3:
-                should_exit = True
-                reason = f"Target hit: +{pnl_percent:.2f}%"
-            elif pnl_percent <= -2:
-                should_exit = True
-                reason = f"Stop loss hit: {pnl_percent:.2f}%"
+            # Use risk manager to check exit conditions
+            should_exit, reason = self.risk_manager.should_exit_position(
+                symbol=symbol,
+                entry_price=avg_price,
+                current_price=current_price,
+                is_options=False
+            )
             
             if should_exit:
                 order_id = f"PAPER_EXIT_{symbol}_{int(time.time())}"
@@ -195,6 +224,11 @@ class PaperTradingEngine:
                     symbol=symbol,
                     order_type='SELL',
                     quantity=position['quantity'],
+                    price=current_price
+                )
+                
+                if success:
+                    logger.info(f"🔔 Exited {symbol}: {reason}")
                     price=current_price
                 )
                 
@@ -270,12 +304,12 @@ class PaperTradingEngine:
             # Display portfolio summary
             summary = self.portfolio.get_portfolio_summary()
             logger.info(f"""
-📊 Portfolio Summary:
-   Total Capital: ₹{summary['total_capital']:,.2f}
-   Available Cash: ₹{summary['available_cash']:,.2f}
-   Invested: ₹{summary['invested_amount']:,.2f}
-   Total P&L: ₹{summary['total_pnl']:,.2f}
-   Today P&L: ₹{summary['today_pnl']:,.2f}
+Portfolio Summary:
+   Total Capital: Rs.{summary['total_capital']:,.2f}
+   Available Cash: Rs.{summary['available_cash']:,.2f}
+   Invested: Rs.{summary['invested_amount']:,.2f}
+   Total P&L: Rs.{summary['total_pnl']:,.2f}
+   Today P&L: Rs.{summary['today_pnl']:,.2f}
    Positions: {summary['positions_count']}
             """)
             
@@ -290,15 +324,15 @@ class PaperTradingEngine:
             interval: Update interval in seconds (default: 60)
         """
         self.running = True
-        logger.info(f"🚀 Paper Trading Engine started (interval: {interval}s)")
+        logger.info(f"Paper Trading Engine started (interval: {interval}s)")
         
         try:
             while self.running:
                 if self.is_market_open():
-                    logger.info("📈 Market is OPEN")
+                    logger.info("Market is OPEN")
                     self.run_cycle()
                 else:
-                    logger.info("🔒 Market is CLOSED - Skipping cycle")
+                    logger.info("Market is CLOSED - Skipping cycle")
                 
                 # Sleep until next cycle
                 time.sleep(interval)

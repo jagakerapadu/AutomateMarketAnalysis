@@ -171,8 +171,9 @@ def save_to_env(access_token, user_id):
     except Exception as e:
         print(f"❌ Error saving to .env: {e}")
         print(f"\nPlease manually add these to your .env file:")
-        print(f"ZERODHA_ACCESS_TOKEN={access_token}")
+        print(f"ZERODHA_ACCESS_TOKEN={access_token[:20]}...")
         print(f"ZERODHA_USER_ID={user_id}")
+        print("\n⚠️  Copy the full token from the success message above")
 
 def main():
     """Main execution flow"""

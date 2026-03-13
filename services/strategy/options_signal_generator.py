@@ -88,7 +88,7 @@ class OptionsSignalGenerator:
                     
                     signals.append(signal)
                     
-                    logger.info(f"✅ {strategy.name}: {signal['option_type']} {signal['strike']} @ ₹{entry_premium:.2f} (Conf: {signal['confidence']:.1f}%)")
+                    logger.info(f"{strategy.name}: {signal['option_type']} {signal['strike']} @ Rs.{entry_premium:.2f} (Conf: {signal['confidence']:.1f}%)")
                 
             except Exception as e:
                 logger.error(f"Error in {strategy.name}: {e}")

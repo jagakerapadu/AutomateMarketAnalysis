@@ -9,6 +9,8 @@ export default function SignalsPage() {
 
   useEffect(() => {
     loadSignals()
+    const interval = setInterval(loadSignals, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
   }, [minConfidence])
 
   const loadSignals = async () => {

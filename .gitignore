@@ -136,21 +136,27 @@ tmp/
 *~.nib
 .cache/
 
-# Test files
-test_*.py
-*_test.py
-check_*.py
-verify_*.py
-debug_*.py
+# Old report files
+march13_analysis_report.txt
+march13_corrected_report.txt
+
+# Note: tests/ directory contains proper test suite (KEEP IT)
+# Only ignore ad-hoc debug scripts in root
+test_data_fetch.py
+test_zerodha_token.py
+test_complete_system.py
+verify_system_status.py
 
 # ============================================
-# Security - Documentation with Credentials
+# Security - Temporary Audit Files
 # ============================================
-# These files may contain example credentials
+# Keep: SECURITY_CHECKLIST.md (permanent security docs)
+# Ignore: SECURITY_AUDIT.md (generated audit reports)
 SECURITY_AUDIT.md
 GITHUB_PREP.md
 SESSION_SUMMARY.md
 *_CREDENTIALS*.md
+*_AUDIT*.txt
 
 # ============================================
 # Allowed Files (Whitelist Examples)

@@ -112,7 +112,7 @@ class VirtualPortfolio:
                 VALUES (%s, %s)
             """, (self.initial_capital, self.initial_capital))
             self.conn.commit()
-            logger.info(f"Initialized paper portfolio with ₹{self.initial_capital:,.2f}")
+            logger.info(f"Initialized paper portfolio with Rs.{self.initial_capital:,.2f}")
         
         cursor.close()
     
@@ -222,11 +222,13 @@ class VirtualPortfolio:
             # Update position
             if order_type == 'BUY':
                 self._add_to_position(cursor, symbol, quantity, price)
+                # Update signal status to ACTIVE
+                self._update_signal_status(cursor, symbol, signal_id)
             else:
                 self._reduce_from_position(cursor, symbol, quantity, price)
             
             self.conn.commit()
-            logger.info(f"Order executed: {order_type} {quantity} {symbol} @ ₹{price:.2f}")
+            logger.info(f"Order executed: {order_type} {quantity} {symbol} @ Rs.{price:.2f}")
             return True
             
         except Exception as e:
@@ -235,6 +237,30 @@ class VirtualPortfolio:
             return False
         finally:
             cursor.close()
+    
+    def _update_signal_status(self, cursor, symbol: str, signal_id: int = None):
+        """Update signal status from PENDING to ACTIVE when position is opened"""
+        try:
+            if signal_id:
+                # Update specific signal by ID
+                cursor.execute("""
+                    UPDATE signals
+                    SET status = 'ACTIVE'
+                    WHERE id = %s AND status = 'PENDING'
+                """, (signal_id,))
+            else:
+                # Update all PENDING BUY signals for this symbol
+                cursor.execute("""
+                    UPDATE signals
+                    SET status = 'ACTIVE'
+                    WHERE symbol = %s AND signal_type = 'BUY' AND status = 'PENDING'
+                """, (symbol,))
+            
+            updated = cursor.rowcount
+            if updated > 0:
+                logger.info(f"Updated {updated} signal(s) to ACTIVE for {symbol}")
+        except Exception as e:
+            logger.error(f"Error updating signal status: {e}")
     
     def _add_to_position(self, cursor, symbol: str, quantity: int, price: float):
         """Add to existing position or create new"""
@@ -325,6 +351,13 @@ class VirtualPortfolio:
         else:
             # Close position
             cursor.execute("DELETE FROM paper_positions WHERE symbol = %s", (symbol,))
+            # Update signal status to CLOSED
+            cursor.execute("""
+                UPDATE signals
+                SET status = 'CLOSED'
+                WHERE symbol = %s AND status = 'ACTIVE'
+            """, (symbol,))
+            logger.info(f"Closed all signals for {symbol}")
         
         # Update portfolio
         cursor.execute("""
@@ -336,7 +369,7 @@ class VirtualPortfolio:
                 updated_at = %s
         """, (sell_value, cost_basis, pnl, pnl, datetime.now(timezone.utc)))
         
-        logger.info(f"Position closed: {symbol} P&L: ₹{pnl:,.2f}")
+        logger.info(f"Position closed: {symbol} P&L: Rs.{pnl:,.2f}")
     
     def update_positions_with_live_prices(self, live_prices: Dict[str, float]):
         """
@@ -431,7 +464,7 @@ class VirtualPortfolio:
         self.conn.commit()
         cursor.close()
         
-        logger.info(f"Portfolio reset to ₹{self.initial_capital:,.2f}")
+        logger.info(f"Portfolio reset to Rs.{self.initial_capital:,.2f}")
     
     def __del__(self):
         """Cleanup"""

@@ -49,7 +49,7 @@ class OptionsVirtualPortfolio:
                 VALUES (%s, %s)
             """, (self.initial_capital, self.initial_capital))
             self.conn.commit()
-            logger.info(f"Initialized options portfolio with ₹{self.initial_capital:,.2f}")
+            logger.info(f"Initialized options portfolio with Rs.{self.initial_capital:,.2f}")
         
         cursor.close()
     
@@ -159,7 +159,7 @@ class OptionsVirtualPortfolio:
             position_id = cursor.fetchone()[0]
             
             # Insert order
-            order_id = f"OPT{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            order_id = f"OPT{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
             cursor.execute("""
                 INSERT INTO paper_options_orders (
                     order_id, symbol, strike, option_type, expiry_date,
@@ -186,7 +186,7 @@ class OptionsVirtualPortfolio:
             self.conn.commit()
             cursor.close()
             
-            logger.info(f"✅ BUY: {quantity} lot(s) {option_type} {strike} @ ₹{premium:.2f} (Total: ₹{total_cost:,.2f})")
+            logger.info(f"BUY: {quantity} lot(s) {option_type} {strike} @ Rs.{premium:.2f} (Total: Rs.{total_cost:,.2f})")
             return True
             
         except Exception as e:
@@ -218,7 +218,7 @@ class OptionsVirtualPortfolio:
             """, (symbol, strike, option_type, expiry_date))
             
             # Insert exit order
-            order_id = f"OPT{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            order_id = f"OPT{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
             cursor.execute("""
                 INSERT INTO paper_options_orders (
                     order_id, symbol, strike, option_type, expiry_date,
@@ -246,7 +246,7 @@ class OptionsVirtualPortfolio:
             self.conn.commit()
             cursor.close()
             
-            logger.info(f"🔔 SELL: {quantity} lot(s) {option_type} {strike} @ ₹{exit_premium:.2f} | P&L: ₹{total_pnl:,.2f} ({exit_reason})")
+            logger.info(f"SELL: {quantity} lot(s) {option_type} {strike} @ Rs.{exit_premium:.2f} | P&L: Rs.{total_pnl:,.2f} ({exit_reason})")
             return True
             
         except Exception as e:

@@ -1,9 +1,14 @@
 """Logging configuration"""
 import logging
 import sys
+import io
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from config.settings import get_settings
+
+# Force UTF-8 encoding for stdout to support emojis on Windows
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
 
 settings = get_settings()
 
@@ -21,7 +26,7 @@ def setup_logger(name: str) -> logging.Logger:
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
-    # Console handler
+    # Console handler with UTF-8 encoding for emojis
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
     console_format = logging.Formatter(
