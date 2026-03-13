@@ -221,13 +221,19 @@ class ZerodhaAdapter:
                         if key in quotes:
                             quote = quotes[key]
                             
+                            # Only add if we have valid price data
+                            ltp = quote.get('last_price')
+                            if not ltp or ltp <= 0:
+                                logger.debug(f"Skipping {inst['tradingsymbol']} - invalid LTP: {ltp}")
+                                continue
+                            
                             options_data.append({
                                 'timestamp': datetime.now(),
                                 'symbol': symbol,
                                 'expiry_date': inst['expiry'].strftime('%Y-%m-%d'),
                                 'strike': inst['strike'],
                                 'option_type': inst['instrument_type'],  # CE or PE
-                                'ltp': quote.get('last_price', 0),
+                                'ltp': ltp,
                                 'iv': quote.get('oi', 0) * 0.0001,  # Placeholder - Kite doesn't provide IV directly
                                 'oi': quote.get('oi', 0),
                                 'oi_change': quote.get('oi_day_high', 0) - quote.get('oi_day_low', 0),

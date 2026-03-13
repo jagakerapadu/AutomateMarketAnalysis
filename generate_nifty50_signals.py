@@ -65,12 +65,10 @@ def generate_sample_signals():
             continue
         
         quote_data = quotes[instrument_key]
-        close_price = quote_data.get('last_price', 0)
-        quote_data = quotes[instrument_key]
-        close_price = quote_data.get('last_price', 0)
+        close_price = quote_data.get('last_price')
         
-        if close_price == 0:
-            print(f"⚠️  Invalid price for {symbol}, skipping...")
+        if not close_price or close_price <= 0:
+            print(f"⚠️  Invalid price for {symbol} (price={close_price}), skipping...")
             continue
         
         # Generate a simple BUY signal based on momentum

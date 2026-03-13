@@ -170,18 +170,18 @@ class TestPnLCalculations(unittest.TestCase):
         """Test options P&L with lot size"""
         lots = 3
         lot_size = 50
-        entry_premium = 182.70
-        current_premium = 133.25
+        entry_premium = 200.00  # Generic test value
+        current_premium = 150.00  # Generic test value
         
         invested = lots * entry_premium * lot_size
         current_value = lots * current_premium * lot_size
         pnl = current_value - invested
         pnl_percent = (pnl / invested) * 100
         
-        self.assertAlmostEqual(invested, 27405, places=0)
-        self.assertAlmostEqual(current_value, 19987.5, places=1)
-        self.assertAlmostEqual(pnl, -7417.5, places=1)
-        self.assertAlmostEqual(pnl_percent, -27.07, places=2)
+        self.assertAlmostEqual(invested, 30000, places=0)
+        self.assertAlmostEqual(current_value, 22500, places=0)
+        self.assertAlmostEqual(pnl, -7500, places=0)
+        self.assertAlmostEqual(pnl_percent, -25.0, places=1)
 
 
 class TestCashFlowTracking(unittest.TestCase):

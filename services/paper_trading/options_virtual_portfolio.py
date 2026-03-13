@@ -266,6 +266,11 @@ class OptionsVirtualPortfolio:
             if key in options_data:
                 current_premium = options_data[key]['ltp']
                 
+                # Validate premium data before using
+                if not current_premium or current_premium <= 0:
+                    logger.warning(f"Skipping {pos['option_type']} {pos['strike']} - invalid premium: {current_premium}")
+                    continue
+                
                 # Update position
                 cursor = self.conn.cursor()
                 

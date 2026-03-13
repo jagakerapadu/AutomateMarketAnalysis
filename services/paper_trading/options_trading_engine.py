@@ -93,18 +93,21 @@ class OptionsTradingEngine:
         return signals
     
     def get_current_premium(self, symbol: str, strike: float, option_type: str) -> float:
-        """Get current option premium from options chain"""
+        """Get current option premium from options chain. Returns None if not available."""
         df = self.options_calc.get_options_chain(symbol)
         
         if df.empty:
-            return 0
+            logger.warning(f"Options chain empty for {symbol}")
+            return None
         
         option_data = df[(df['strike'] == strike) & (df['option_type'] == option_type)]
         
         if not option_data.empty:
-            return float(option_data.iloc[0]['ltp'])
+            ltp = float(option_data.iloc[0]['ltp'])
+            return ltp if ltp > 0 else None
         
-        return 0
+        logger.warning(f"No data found for {symbol} {option_type} {strike}")
+        return None
     
     def execute_pending_signals(self):
         """Execute pending signals if conditions met"""
@@ -125,8 +128,8 @@ class OptionsTradingEngine:
                     signal['option_type']
                 )
                 
-                if current_premium == 0:
-                    logger.warning(f"No price data for {signal['option_type']} {signal['strike']}")
+                if not current_premium:
+                    logger.warning(f"No price data for {signal['option_type']} {signal['strike']} - skipping execution")
                     continue
                 
                 # Check if price is within acceptable range (±5%)
@@ -174,7 +177,8 @@ class OptionsTradingEngine:
                     pos['option_type']
                 )
                 
-                if current_premium == 0:
+                if not current_premium:
+                    logger.debug(f"No price data for {pos['option_type']} {pos['strike']} - skipping exit check")
                     continue
                 
                 entry_premium = pos['entry_premium']

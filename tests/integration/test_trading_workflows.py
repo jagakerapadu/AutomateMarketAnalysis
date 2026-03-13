@@ -158,11 +158,11 @@ class TestOptionsTrading(unittest.TestCase):
     
     def test_options_pnl_calculation(self):
         """Test options P&L calculation"""
-        # March 13 CE 23500 example
+        # Generic options P&L test (not tied to specific market prices)
         lots = 3
         lot_size = 50
         entry = 182.70
-        current = 133.25
+        current = 150.00  # Use test value, not hardcoded market price
         
         invested = lots * entry * lot_size
         current_val = lots * current * lot_size
@@ -170,9 +170,9 @@ class TestOptionsTrading(unittest.TestCase):
         pnl_percent = (pnl / invested) * 100
         
         self.assertAlmostEqual(invested, 27405, places=0)
-        self.assertAlmostEqual(current_val, 19987.5, places=1)
-        self.assertAlmostEqual(pnl, -7417.5, places=1)
-        self.assertAlmostEqual(pnl_percent, -27.07, places=2)
+        self.assertAlmostEqual(current_val, 22500, places=0)
+        self.assertAlmostEqual(pnl, -4905, places=0)
+        self.assertAlmostEqual(pnl_percent, -17.90, places=2)
     
     def test_options_stop_loss_40_percent(self):
         """Test options stop-loss at -40%"""

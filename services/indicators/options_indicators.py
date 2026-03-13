@@ -184,15 +184,15 @@ class OptionsIndicators:
         
         # Highest CE OI = Strong resistance
         ce_df = df[df['option_type'] == 'CE']
-        call_resistance = ce_df.loc[ce_df['oi'].idxmax(), 'strike'] if not ce_df.empty else 0
+        call_resistance = ce_df.loc[ce_df['oi'].idxmax(), 'strike'] if not ce_df.empty else None
         
         # Highest PE OI = Strong support
         pe_df = df[df['option_type'] == 'PE']
-        put_support = pe_df.loc[pe_df['oi'].idxmax(), 'strike'] if not pe_df.empty else 0
+        put_support = pe_df.loc[pe_df['oi'].idxmax(), 'strike'] if not pe_df.empty else None
         
         return {
-            'call_resistance': float(call_resistance),
-            'put_support': float(put_support)
+            'call_resistance': float(call_resistance) if call_resistance else None,
+            'put_support': float(put_support) if put_support else None
         }
     
     def calculate_iv_rank(self, symbol: str = "NIFTY", lookback_days: int = 30) -> Dict[str, float]:
@@ -399,8 +399,12 @@ if __name__ == "__main__":
     print(f"IV Rank: {indicators.get('iv_rank', 0):.2f}%")
     print(f"ATM Call IV: {indicators.get('atm_call_iv', 0):.4f}")
     print(f"ATM Put IV: {indicators.get('atm_put_iv', 0):.4f}")
-    print(f"Call Resistance: ₹{indicators.get('call_resistance', 0):,.2f}")
-    print(f"Put Support: ₹{indicators.get('put_support', 0):,.2f}")
+    
+    # Display support/resistance with N/A if not available
+    call_res = indicators.get('call_resistance')
+    put_sup = indicators.get('put_support')
+    print(f"Call Resistance: ₹{call_res:,.2f}" if call_res else "Call Resistance: N/A")
+    print(f"Put Support: ₹{put_sup:,.2f}" if put_sup else "Put Support: N/A")
     
     # Save to database
     calc.save_indicators(indicators)
