@@ -172,9 +172,9 @@ class VirtualPortfolio:
                 'avg_price': float(row[3]),
                 'current_price': float(row[4]) if row[4] else None,
                 'invested_value': float(row[5]),
-                'current_value': float(row[6]) if row[6] else 0,
-                'pnl': float(row[7]) if row[7] else 0,
-                'pnl_percent': float(row[8]) if row[8] else 0,
+                'current_value': float(row[6]) if row[6] else None,
+                'pnl': float(row[7]) if row[7] else None,
+                'pnl_percent': float(row[8]) if row[8] else None,
                 'position_type': row[9],
                 'opened_at': row[10],
                 'updated_at': row[11]
