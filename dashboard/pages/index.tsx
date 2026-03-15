@@ -51,7 +51,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Trading System</h1>
             <nav className="flex space-x-6">
-              <Link href="/" className="hover:text-blue-400">Dashboard</Link>
+              <Link href="/" className="text-blue-400 font-semibold">Dashboard</Link>
               <Link href="/signals" className="hover:text-blue-400">Signals</Link>
               <Link href="/trades" className="hover:text-blue-400">Trades</Link>
               <Link href="/paper-trading" className="hover:text-blue-400">Stock Trading</Link>

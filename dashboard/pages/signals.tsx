@@ -41,18 +41,16 @@ export default function SignalsPage() {
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <Link href="/" className="text-2xl font-bold">Trading System</Link>
-              <nav className="flex gap-4">
-                <Link href="/" className="text-gray-400 hover:text-white">Dashboard</Link>
-                <Link href="/signals" className="text-white border-b-2 border-blue-500">Signals</Link>
-                <Link href="/trades" className="text-gray-400 hover:text-white">Trades</Link>
-                <Link href="/paper-trading" className="text-gray-400 hover:text-white">Stock Trading</Link>
-                <Link href="/position-analysis" className="text-gray-400 hover:text-white">📊 Analysis</Link>
-                <Link href="/options-trading" className="text-yellow-400 hover:text-white">Nifty 50 Options</Link>
-                <Link href="/backtest" className="text-gray-400 hover:text-white">Backtest</Link>
-              </nav>
-            </div>
+            <h1 className="text-2xl font-bold">Trading System</h1>
+            <nav className="flex space-x-6">
+              <Link href="/" className="hover:text-blue-400">Dashboard</Link>
+              <Link href="/signals" className="text-blue-400 font-semibold">Signals</Link>
+              <Link href="/trades" className="hover:text-blue-400">Trades</Link>
+              <Link href="/paper-trading" className="hover:text-blue-400">Stock Trading</Link>
+              <Link href="/position-analysis" className="hover:text-blue-400">📊 Analysis</Link>
+              <Link href="/options-trading" className="hover:text-blue-400 text-yellow-400">Nifty 50 Options</Link>
+              <Link href="/backtest" className="hover:text-blue-400">Backtest</Link>
+            </nav>
           </div>
         </div>
       </header>

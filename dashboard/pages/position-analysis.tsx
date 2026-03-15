@@ -192,20 +192,24 @@ export default function PositionAnalysis() {
       </Head>
 
       {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Trading System</h1>
-            <nav className="flex space-x-6 text-sm">
-              <Link href="/" className="text-gray-600 hover:text-blue-600">Dashboard</Link>
-              <Link href="/signals" className="text-gray-600 hover:text-blue-600">Signals</Link>
-              <Link href="/trades" className="text-gray-600 hover:text-blue-600">Trades</Link>
-              <Link href="/paper-trading" className="text-gray-600 hover:text-blue-600">Stock Trading</Link>
-              <Link href="/position-analysis" className="text-blue-600 font-semibold">📊 Analysis</Link>
-              <Link href="/options-trading" className="text-yellow-600 hover:text-yellow-700">Nifty 50 Options</Link>
-              <Link href="/backtest" className="text-gray-600 hover:text-blue-600">Backtest</Link>
+      <header className="bg-gray-800 border-b border-gray-700">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Trading System</h1>
+            <nav className="flex space-x-6">
+              <Link href="/" className="hover:text-blue-400 text-gray-300">Dashboard</Link>
+              <Link href="/signals" className="hover:text-blue-400 text-gray-300">Signals</Link>
+              <Link href="/trades" className="hover:text-blue-400 text-gray-300">Trades</Link>
+              <Link href="/paper-trading" className="hover:text-blue-400 text-gray-300">Stock Trading</Link>
+              <Link href="/position-analysis" className="text-blue-400 font-semibold">📊 Analysis</Link>
+              <Link href="/options-trading" className="hover:text-blue-400 text-yellow-400">Nifty 50 Options</Link>
+              <Link href="/backtest" className="hover:text-blue-400 text-gray-300">Backtest</Link>
             </nav>
           </div>
+        </div>
+      </header>
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">📊 Position Analysis</h2>
