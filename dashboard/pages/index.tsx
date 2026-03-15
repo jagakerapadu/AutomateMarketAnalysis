@@ -20,7 +20,7 @@ export default function Dashboard() {
       const [marketRes, signalsRes, portfolioRes, tradesRes] = await Promise.all([
         marketAPI.getOverview(),
         signalsAPI.getLatest(10, 70),
-        portfolioAPI.getSummary(),
+        portfolioAPI.getCombinedSummary(),  // Use combined summary for stocks + options
         tradesAPI.getStats(30)
       ])
 

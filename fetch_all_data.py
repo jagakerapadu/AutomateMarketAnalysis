@@ -7,7 +7,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config.settings import get_settings
-get_settings.cache_clear()
 
 import asyncio
 from datetime import datetime, timedelta

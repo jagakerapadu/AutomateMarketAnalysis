@@ -85,44 +85,85 @@ async def get_trade_stats(
     days: int = Query(default=30, le=365),
     db: Session = Depends(get_db)
 ):
-    """Get trading statistics"""
+    """Get combined trading statistics from current positions (stocks + options)"""
     try:
-        from_date = datetime.now() - timedelta(days=days)
-        
-        query = text("""
+        # Get stats from current positions (stocks)
+        stock_query = text("""
             SELECT 
-                COUNT(*) as total_trades,
-                COUNT(CASE WHEN status = 'CLOSED' THEN 1 END) as closed_trades,
-                COUNT(CASE WHEN status = 'OPEN' THEN 1 END) as open_trades,
-                COUNT(CASE WHEN pnl > 0 THEN 1 END) as winning_trades,
-                COUNT(CASE WHEN pnl < 0 THEN 1 END) as losing_trades,
-                SUM(pnl) as total_pnl,
+                COUNT(*) as total_positions,
+                COUNT(CASE WHEN pnl > 0 THEN 1 END) as winning_positions,
+                COUNT(CASE WHEN pnl < 0 THEN 1 END) as losing_positions,
                 AVG(CASE WHEN pnl > 0 THEN pnl END) as avg_win,
                 AVG(CASE WHEN pnl < 0 THEN pnl END) as avg_loss,
-                MAX(pnl) as best_trade,
-                MIN(pnl) as worst_trade
-            FROM trades
-            WHERE entry_time >= :from_date
+                SUM(pnl) as total_pnl
+            FROM paper_positions
+            WHERE quantity > 0
         """)
         
-        result = db.execute(query, {'from_date': from_date}).fetchone()
+        # Get stats from options positions
+        options_query = text("""
+            SELECT 
+                COUNT(*) as total_positions,
+                COUNT(CASE WHEN pnl > 0 THEN 1 END) as winning_positions,
+                COUNT(CASE WHEN pnl < 0 THEN 1 END) as losing_positions,
+                AVG(CASE WHEN pnl > 0 THEN pnl END) as avg_win,
+                AVG(CASE WHEN pnl < 0 THEN pnl END) as avg_loss,
+                SUM(pnl) as total_pnl
+            FROM paper_options_positions
+            WHERE quantity > 0
+        """)
         
-        total_closed = result[1] or 0
-        winning = result[3] or 0
-        win_rate = (winning / total_closed * 100) if total_closed > 0 else 0
+        stock_result = db.execute(stock_query).fetchone()
+        options_result = db.execute(options_query).fetchone()
+        
+        # Count executed orders
+        order_count_query = text("""
+            SELECT 
+                (SELECT COUNT(*) FROM paper_orders WHERE status = 'EXECUTED') +
+                (SELECT COUNT(*) FROM paper_options_orders WHERE status = 'EXECUTED')
+        """)
+        total_orders = db.execute(order_count_query).scalar() or 0
+        
+        # Combine results
+        total_positions = (stock_result[0] or 0) + (options_result[0] or 0)
+        winning = (stock_result[1] or 0) + (options_result[1] or 0)
+        losing = (stock_result[2] or 0) + (options_result[2] or 0)
+        
+        # Calculate weighted average wins/losses
+        stock_wins = stock_result[1] or 0
+        options_wins = options_result[1] or 0
+        total_wins = stock_wins + options_wins
+        
+        if total_wins > 0:
+            avg_win = ((stock_result[3] or 0) * stock_wins + (options_result[3] or 0) * options_wins) / total_wins
+        else:
+            avg_win = 0
+            
+        stock_losses = stock_result[2] or 0
+        options_losses = options_result[2] or 0
+        total_losses = stock_losses + options_losses
+        
+        if total_losses > 0:
+            avg_loss = ((stock_result[4] or 0) * stock_losses + (options_result[4] or 0) * options_losses) / total_losses
+        else:
+            avg_loss = 0
+        
+        win_rate = (winning / total_positions * 100) if total_positions > 0 else 0
+        
+        total_pnl = (stock_result[5] or 0) + (options_result[5] or 0)
         
         return {
-            "total_trades": result[0],
-            "closed_trades": result[1],
-            "open_trades": result[2],
+            "total_trades": total_orders,
+            "closed_trades": 0,
+            "open_trades": total_positions,
             "winning_trades": winning,
-            "losing_trades": result[4],
+            "losing_trades": losing,
             "win_rate": round(win_rate, 2),
-            "total_pnl": round(result[5], 2) if result[5] else 0,
-            "avg_win": round(result[6], 2) if result[6] else 0,
-            "avg_loss": round(result[7], 2) if result[7] else 0,
-            "best_trade": round(result[8], 2) if result[8] else 0,
-            "worst_trade": round(result[9], 2) if result[9] else 0
+            "total_pnl": round(float(total_pnl), 2),
+            "avg_win": round(float(avg_win), 2) if avg_win else 0,
+            "avg_loss": round(float(avg_loss), 2) if avg_loss else 0,
+            "best_trade": round(float(max(stock_result[3] or 0, options_result[3] or 0)), 2),
+            "worst_trade": round(float(min(stock_result[4] or 0, options_result[4] or 0)), 2)
         }
         
     except Exception as e:

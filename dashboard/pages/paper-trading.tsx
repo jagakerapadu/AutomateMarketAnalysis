@@ -156,7 +156,22 @@ export default function PaperTrading() {
           {/* Portfolio Summary */}
           {portfolio && (
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Portfolio Summary</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Portfolio Summary</h2>
+              <div className="text-sm text-gray-400">
+                Last updated: {(() => {
+                  const date = new Date(portfolio.updated_at);
+                  const day = date.getDate();
+                  const month = date.toLocaleString('en-US', { month: 'short' });
+                  const time = date.toLocaleString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  }).toLowerCase();
+                  return `${day} ${month}, ${time}`;
+                })()}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-gray-800 p-6 rounded-lg">
                 <h3 className="text-gray-400 text-sm mb-2">Total Capital</h3>
